@@ -92,13 +92,9 @@ class RegexFeaturizer(Featurizer):
         # type: (Text, Metadata, Optional[RegexFeaturizer], **Any) -> RegexFeaturizer
 
         if model_dir and model_metadata.get("regex_featurizer"):
-            regex_file = os.path.join(model_dir, model_metadata.get("regex_featurizer"))
-            if os.path.isfile(regex_file):
-                with io.open(regex_file, encoding='utf-8') as f:
-                    known_patterns = json.loads(f.read())
-                return RegexFeaturizer(known_patterns)
-            else:
-                warnings.warn("Failed to load regex pattern file '{}'".format(regex_file))
+            known_patterns = json.loads(model_metadata.get("regex_featurizer"))
+            return RegexFeaturizer(known_patterns)
+
         return RegexFeaturizer()
 
     def persist(self, model_dir):
@@ -106,9 +102,6 @@ class RegexFeaturizer(Featurizer):
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
 
         if self.known_patterns:
-            regex_file = os.path.join(model_dir, "regex_featurizer.json")
-            with io.open(regex_file, 'w') as f:
-                f.write(str(json.dumps(self.known_patterns, indent=4)))
-            return {"regex_featurizer": "regex_featurizer.json"}
+            return {"regex_featurizer": str(json.dumps(self.known_patterns, indent=4))}
         else:
             return {"regex_featurizer": None}
