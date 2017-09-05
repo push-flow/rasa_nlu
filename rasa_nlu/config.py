@@ -53,7 +53,7 @@ class InvalidConfigError(ValueError):
 class RasaNLUConfig(object):
 
     def __init__(self, file=None, env_vars=None, cmdline_args=None):
-
+        self.override(DEFAULT_CONFIG)
         self.override(json.loads(file))
 
         if env_vars is not None:
