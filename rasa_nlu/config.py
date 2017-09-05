@@ -52,19 +52,9 @@ class InvalidConfigError(ValueError):
 
 class RasaNLUConfig(object):
 
-    def __init__(self, filename=None, env_vars=None, cmdline_args=None):
+    def __init__(self, file=None, env_vars=None, cmdline_args=None):
 
-        if filename is None and os.path.isfile(DEFAULT_CONFIG_LOCATION):
-            filename = DEFAULT_CONFIG_LOCATION
-
-        self.override(DEFAULT_CONFIG)
-        if filename is not None:
-            try:
-                with io.open(filename, encoding='utf-8') as f:
-                    file_config = json.loads(f.read())
-            except ValueError as e:
-                raise InvalidConfigError("Failed to read configuration file '{}'. Error: {}".format(filename, e))
-            self.override(file_config)
+        self.override(json.loads(file))
 
         if env_vars is not None:
             env_config = self.create_env_config(env_vars)

@@ -159,12 +159,7 @@ class SklearnIntentClassifier(Component):
         import cloudpickle
 
         if model_dir and model_metadata.get("intent_classifier_sklearn"):
-            classifier_file = os.path.join(model_dir, model_metadata.get("intent_classifier_sklearn"))
-            with io.open(classifier_file, 'rb') as f:  # pragma: no test
-                if PY3:
-                    return cloudpickle.load(f, encoding="latin-1")
-                else:
-                    return cloudpickle.load(f)
+            return cloudpickle.loads(model_metadata.get("intent_classifier_sklearn"), encoding="latin-1")
         else:
             return SklearnIntentClassifier()
 
@@ -174,10 +169,6 @@ class SklearnIntentClassifier(Component):
 
         import cloudpickle
 
-        classifier_file = os.path.join(model_dir, "intent_classifier.pkl")
-        with io.open(classifier_file, 'wb') as f:
-            cloudpickle.dump(self, f)
-
         return {
-            "intent_classifier_sklearn": "intent_classifier.pkl"
+            "intent_classifier_sklearn": cloudpickle.dumps(self)
         }
