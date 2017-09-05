@@ -121,12 +121,8 @@ class TrainingData(object):
         # type: (Text) -> Dict[Text, Any]
         """Persists this training data to disk and returns necessary information to load it again."""
 
-        data_file = os.path.join(dir_name, "training_data.json")
-        with io.open(data_file, 'w') as f:
-            f.write(self.as_json(indent=2))
-
         return {
-            "training_data": "training_data.json"
+            "training_data": self.as_json(indent=2)
         }
 
     def sorted_entity_examples(self):
