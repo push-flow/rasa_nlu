@@ -159,7 +159,7 @@ class SklearnIntentClassifier(Component):
         import pickle
 
         if model_dir and model_metadata.get("intent_classifier_sklearn"):
-            return pickle.loads(model_metadata.get("intent_classifier_sklearn").encode('ISO-8859-1'), encoding="latin-1")
+            return model_metadata.get("intent_classifier_sklearn")
         else:
             return SklearnIntentClassifier()
 
@@ -170,5 +170,5 @@ class SklearnIntentClassifier(Component):
         import pickle
 
         return {
-            "intent_classifier_sklearn": pickle.dumps(self).decode('ISO-8859-1')
+            "intent_classifier_sklearn": self
         }

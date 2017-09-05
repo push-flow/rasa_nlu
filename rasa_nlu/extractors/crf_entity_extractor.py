@@ -193,7 +193,7 @@ class CRFEntityExtractor(EntityExtractor):
 
         if model_dir and model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
-            ent_tagger = pickle.loads(meta["model_file"].encode('ISO-8859-1'))
+            ent_tagger = meta["model_file"]
             return CRFEntityExtractor(ent_tagger=ent_tagger,
                                       entity_crf_features=meta['crf_features'],
                                       entity_crf_BILOU_flag=meta['BILOU_flag'])
@@ -206,7 +206,7 @@ class CRFEntityExtractor(EntityExtractor):
         import pickle
 
         if self.ent_tagger:            
-            return {"entity_extractor_crf": {"model_file": pickle.dumps(self.ent_tagger).decode('ISO-8859-1'),
+            return {"entity_extractor_crf": {"model_file": self.ent_tagger,
                                              "crf_features": self.crf_features,
                                              "BILOU_flag": self.BILOU_flag,
                                              "version": 1}}

@@ -82,6 +82,7 @@ class Metadata(object):
         return self.get('pipeline', [])
 
     def persist(self, model_dir):
+        import pickle
         # type: (Text) -> None
         """Persists the metadata of a model to a given directory."""
 
@@ -92,8 +93,8 @@ class Metadata(object):
             "rasa_nlu_version": rasa_nlu.__version__,
         })
 
-        with io.open(os.path.join(model_dir, 'metadata.json'), 'w') as f:
-            f.write(str(json.dumps(metadata, indent=4)))
+        with io.open(os.path.join(model_dir, 'metadata.pkl'), 'ab') as f:
+            pickle.dump(metadata, f)
 
 
 class Trainer(object):
