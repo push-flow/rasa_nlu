@@ -106,14 +106,13 @@ def load_luis_data(filename):
     return TrainingData(training_examples, regex_features=regex_features)
 
 
-def load_wit_data(filename):
+def load_wit_data(data):
     # type: (Text) -> TrainingData
     """Loads training data stored in the WIT.ai data format."""
 
     training_examples = []
 
-    with io.open(filename, encoding="utf-8-sig") as f:
-        data = json.loads(f.read())
+    data = json.loads(data)
     for s in data["data"]:
         entities = s.get("entities")
         if entities is None:
