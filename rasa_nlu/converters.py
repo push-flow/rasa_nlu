@@ -106,13 +106,14 @@ def load_luis_data(filename):
     return TrainingData(training_examples, regex_features=regex_features)
 
 
-def load_wit_data(data):
+def load_wit_data(filename):
     # type: (Text) -> TrainingData
     """Loads training data stored in the WIT.ai data format."""
 
     training_examples = []
 
-    data = json.loads(data)
+    with io.open(filename, encoding="utf-8-sig") as f:
+        data = json.loads(f.read())
     for s in data["data"]:
         entities = s.get("entities")
         if entities is None:
@@ -210,12 +211,11 @@ def validate_rasa_nlu_data(data):
         raise e
 
 
-def load_rasa_data(filename):
+def load_rasa_data(data):
     # type: (Text) -> TrainingData
     """Loads training data stored in the rasa NLU data format."""
 
-    with io.open(filename, encoding="utf-8-sig") as f:
-        data = json.loads(f.read())
+    data = json.loads(data)
     validate_rasa_nlu_data(data)
 
     common = data['rasa_nlu_data'].get("common_examples", list())

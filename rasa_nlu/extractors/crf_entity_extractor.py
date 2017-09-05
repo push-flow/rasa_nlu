@@ -189,11 +189,11 @@ class CRFEntityExtractor(EntityExtractor):
     @classmethod
     def load(cls, model_dir, model_metadata, cached_component, **kwargs):
         # type: (Text, Metadata, Optional[CRFEntityExtractor], **Any) -> CRFEntityExtractor
-        from sklearn.externals import joblib
+        import pickle
 
         if model_dir and model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
-            ent_tagger = joblib.loads(meta["model_file"])
+            ent_tagger = pickle.loads(meta["model_file"].encode('ISO-8859-1'))
             return CRFEntityExtractor(ent_tagger=ent_tagger,
                                       entity_crf_features=meta['crf_features'],
                                       entity_crf_BILOU_flag=meta['BILOU_flag'])
@@ -203,10 +203,10 @@ class CRFEntityExtractor(EntityExtractor):
     def persist(self, model_dir):
         # type: (Text) -> Dict[Text, Any]
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
-        from sklearn.externals import joblib
+        import pickle
 
         if self.ent_tagger:            
-            return {"entity_extractor_crf": {"model_file": joblib.dumps(self.ent_tagger),
+            return {"entity_extractor_crf": {"model_file": pickle.dumps(self.ent_tagger).decode('ISO-8859-1'),
                                              "crf_features": self.crf_features,
                                              "BILOU_flag": self.BILOU_flag,
                                              "version": 1}}

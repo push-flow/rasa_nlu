@@ -156,10 +156,10 @@ class SklearnIntentClassifier(Component):
     @classmethod
     def load(cls, model_dir=None, model_metadata=None, cached_component=None, **kwargs):
         # type: (Text, Metadata, Optional[Component], **Any) -> SklearnIntentClassifier
-        import cloudpickle
+        import pickle
 
         if model_dir and model_metadata.get("intent_classifier_sklearn"):
-            return cloudpickle.loads(model_metadata.get("intent_classifier_sklearn"), encoding="latin-1")
+            return pickle.loads(model_metadata.get("intent_classifier_sklearn").encode('ISO-8859-1'), encoding="latin-1")
         else:
             return SklearnIntentClassifier()
 
@@ -167,8 +167,8 @@ class SklearnIntentClassifier(Component):
         # type: (Text) -> Dict[Text, Any]
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
 
-        import cloudpickle
+        import pickle
 
         return {
-            "intent_classifier_sklearn": cloudpickle.dumps(self)
+            "intent_classifier_sklearn": pickle.dumps(self).decode('ISO-8859-1')
         }
