@@ -193,7 +193,7 @@ class CRFEntityExtractor(EntityExtractor):
 
         if model_dir and model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
-            ent_tagger = joblib.load(os.path.join(model_dir, meta["model_file"]))
+            ent_tagger = joblib.loads(meta["model_file"])
             return CRFEntityExtractor(ent_tagger=ent_tagger,
                                       entity_crf_features=meta['crf_features'],
                                       entity_crf_BILOU_flag=meta['BILOU_flag'])
@@ -205,11 +205,8 @@ class CRFEntityExtractor(EntityExtractor):
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
         from sklearn.externals import joblib
 
-        if self.ent_tagger:
-            model_file_name = os.path.join(model_dir, "crf_model.pkl")
-
-            joblib.dump(self.ent_tagger, model_file_name)
-            return {"entity_extractor_crf": {"model_file": "crf_model.pkl",
+        if self.ent_tagger:            
+            return {"entity_extractor_crf": {"model_file": joblib.dumps(self.ent_tagger),
                                              "crf_features": self.crf_features,
                                              "BILOU_flag": self.BILOU_flag,
                                              "version": 1}}
