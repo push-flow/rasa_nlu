@@ -122,7 +122,7 @@ class TrainingData(object):
         """Persists this training data to disk and returns necessary information to load it again."""
 
         return {
-            "training_data": self.as_json(indent=2)
+            "training_data": self
         }
 
     def sorted_entity_examples(self):
