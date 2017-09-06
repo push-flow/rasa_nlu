@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from builtins import str
 from builtins import range
 import io
-import json
 import os
 import warnings
 import six
@@ -54,14 +53,14 @@ class EntitySynonymMapper(EntityExtractor):
         # type: (Text) -> Dict[Text, Any]
 
         if self.synonyms:
-            return {"entity_synonyms": str(json.dumps(self.synonyms))}
+            return {"entity_synonyms": self.synonyms}
 
     @classmethod
     def load(cls, model_dir, model_metadata, cached_component, **kwargs):
         # type: (Text, Metadata, Optional[EntitySynonymMapper], **Any) -> EntitySynonymMapper
 
         if model_dir and model_metadata.get("entity_synonyms"):
-            synonyms = json.loads(model_metadata.get("entity_synonyms"))
+            synonyms = model_metadata.get("entity_synonyms")
             return EntitySynonymMapper(synonyms)
 
         return EntitySynonymMapper()

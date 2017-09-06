@@ -157,7 +157,7 @@ class SklearnIntentClassifier(Component):
     def load(cls, model_dir=None, model_metadata=None, cached_component=None, **kwargs):
         # type: (Text, Metadata, Optional[Component], **Any) -> SklearnIntentClassifier
 
-        if model_dir and model_metadata.get("intent_classifier_sklearn"):
+        if model_metadata.get("intent_classifier_sklearn"):
             return model_metadata.get("intent_classifier_sklearn")
         else:
             return SklearnIntentClassifier()

@@ -189,7 +189,6 @@ class CRFEntityExtractor(EntityExtractor):
     @classmethod
     def load(cls, model_dir, model_metadata, cached_component, **kwargs):
         # type: (Text, Metadata, Optional[CRFEntityExtractor], **Any) -> CRFEntityExtractor
-        import pickle
 
         if model_dir and model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
@@ -203,7 +202,6 @@ class CRFEntityExtractor(EntityExtractor):
     def persist(self, model_dir):
         # type: (Text) -> Dict[Text, Any]
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
-        import pickle
 
         if self.ent_tagger:            
             return {"entity_extractor_crf": {"model_file": self.ent_tagger,

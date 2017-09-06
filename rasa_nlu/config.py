@@ -56,7 +56,8 @@ class RasaNLUConfig(object):
         if data is None and os.path.isdata(DEFAULT_CONFIG_LOCATION):
             data = DEFAULT_CONFIG_LOCATION
         self.override(DEFAULT_CONFIG)
-        self.override(json.loads(data))
+        if data is not None:
+            self.override(json.loads(data))
 
         if env_vars is not None:
             env_config = self.create_env_config(env_vars)

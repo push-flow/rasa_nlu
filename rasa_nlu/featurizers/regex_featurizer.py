@@ -92,7 +92,7 @@ class RegexFeaturizer(Featurizer):
         # type: (Text, Metadata, Optional[RegexFeaturizer], **Any) -> RegexFeaturizer
 
         if model_dir and model_metadata.get("regex_featurizer"):
-            known_patterns = json.loads(model_metadata.get("regex_featurizer"))
+            known_patterns = model_metadata.get("regex_featurizer")
             return RegexFeaturizer(known_patterns)
 
         return RegexFeaturizer()
@@ -102,6 +102,6 @@ class RegexFeaturizer(Featurizer):
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
 
         if self.known_patterns:
-            return {"regex_featurizer": str(json.dumps(self.known_patterns, indent=4))}
+            return {"regex_featurizer": self.known_patterns}
         else:
             return {"regex_featurizer": None}
