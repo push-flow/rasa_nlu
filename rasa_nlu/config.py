@@ -52,9 +52,11 @@ class InvalidConfigError(ValueError):
 
 class RasaNLUConfig(object):
 
-    def __init__(self, file=None, env_vars=None, cmdline_args=None):
+    def __init__(self, data=None, env_vars=None, cmdline_args=None):
+        if data is None and os.path.isdata(DEFAULT_CONFIG_LOCATION):
+            data = DEFAULT_CONFIG_LOCATION
         self.override(DEFAULT_CONFIG)
-        self.override(json.loads(file))
+        self.override(json.loads(data))
 
         if env_vars is not None:
             env_config = self.create_env_config(env_vars)
