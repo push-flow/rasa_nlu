@@ -95,9 +95,9 @@ class SpacyNLP(Component):
         if cached_component:
             return cached_component
 
-        nlp = spacy.load(model_dir.get("spacy_model_name"), parser=False)
+        nlp = spacy.load(model_metadata.get("spacy_model_name"), parser=False)
         cls.ensure_proper_language_model(nlp)
-        return SpacyNLP(nlp, model_dir.get("language"), model_dir.get("spacy_model_name"))
+        return SpacyNLP(nlp, model_metadata.get("language"), model_metadata.get("spacy_model_name"))
 
     @staticmethod
     def ensure_proper_language_model(nlp):
