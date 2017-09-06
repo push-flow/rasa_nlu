@@ -156,7 +156,6 @@ class SklearnIntentClassifier(Component):
     @classmethod
     def load(cls, model_dir=None, model_metadata=None, cached_component=None, **kwargs):
         # type: (Text, Metadata, Optional[Component], **Any) -> SklearnIntentClassifier
-        import pickle
 
         if model_dir and model_metadata.get("intent_classifier_sklearn"):
             return model_metadata.get("intent_classifier_sklearn")
@@ -166,8 +165,6 @@ class SklearnIntentClassifier(Component):
     def persist(self, model_dir):
         # type: (Text) -> Dict[Text, Any]
         """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
-
-        import pickle
 
         return {
             "intent_classifier_sklearn": self
