@@ -59,7 +59,7 @@ class EntitySynonymMapper(EntityExtractor):
     def load(cls, model_dir, model_metadata, cached_component, **kwargs):
         # type: (Text, Metadata, Optional[EntitySynonymMapper], **Any) -> EntitySynonymMapper
 
-        if model_dir and model_metadata.get("entity_synonyms"):
+        if model_metadata.get("entity_synonyms"):
             synonyms = model_metadata.get("entity_synonyms")
             return EntitySynonymMapper(synonyms)
 

@@ -190,7 +190,7 @@ class CRFEntityExtractor(EntityExtractor):
     def load(cls, model_dir, model_metadata, cached_component, **kwargs):
         # type: (Text, Metadata, Optional[CRFEntityExtractor], **Any) -> CRFEntityExtractor
 
-        if model_dir and model_metadata.get("entity_extractor_crf"):
+        if model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
             ent_tagger = meta["model_file"]
             return CRFEntityExtractor(ent_tagger=ent_tagger,

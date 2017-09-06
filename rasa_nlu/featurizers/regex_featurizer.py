@@ -91,7 +91,7 @@ class RegexFeaturizer(Featurizer):
     def load(cls, model_dir=None, model_metadata=None, cached_component=None, **kwargs):
         # type: (Text, Metadata, Optional[RegexFeaturizer], **Any) -> RegexFeaturizer
 
-        if model_dir and model_metadata.get("regex_featurizer"):
+        if model_metadata.get("regex_featurizer"):
             known_patterns = model_metadata.get("regex_featurizer")
             return RegexFeaturizer(known_patterns)
 
