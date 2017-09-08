@@ -58,7 +58,7 @@ class Metadata(object):
         except Exception as e:
             raise InvalidModelError("Failed to load model metadata. {}".format(e))
 
-    def __init__(self, metadata, model_dir):
+    def __init__(self, metadata, model_dir=None):
         # type: (Dict[Text, Any], Optional[Text]) -> None
 
         self.metadata = metadata
@@ -81,7 +81,7 @@ class Metadata(object):
 
         return self.get('pipeline', [])
 
-    def persist(self, model_dir):
+    def persist(self):
         import pickle
         # type: (Text) -> None
         """Persists the metadata of a model to a given directory."""
@@ -93,8 +93,7 @@ class Metadata(object):
             "rasa_nlu_version": rasa_nlu.__version__,
         })
 
-        with io.open(os.path.join(model_dir, 'metadata.pkl'), 'ab') as f:
-            pickle.dump(metadata, f)
+        return pickle.dumps(metadata)
 
 
 class Trainer(object):
@@ -150,7 +149,7 @@ class Trainer(object):
 
         return Interpreter(self.pipeline, context)
 
-    def persist(self, path, persistor=None, model_name=None):
+    def persist(self, path=None, persistor=None, model_name=None):
         # type: (Text, Optional[Persistor], Text) -> Text
         """Persist all components of the pipeline to the passed path. Returns the directory of the persited model."""
 
@@ -160,27 +159,15 @@ class Trainer(object):
             "pipeline": [component.name for component in self.pipeline],
         }
 
-        if model_name is None:
-            dir_name = os.path.join(path, "model_" + timestamp)
-        else:
-            dir_name = os.path.join(path, model_name)
-
-        create_dir(dir_name)
-
         if self.training_data:
-            metadata.update(self.training_data.persist(dir_name))
+            metadata.update(self.training_data.persist(None))
 
         for component in self.pipeline:
-            update = component.persist(dir_name)
+            update = component.persist(None)
             if update:
                 metadata.update(update)
 
-        Metadata(metadata, dir_name).persist(dir_name)
-
-        if persistor is not None:
-            persistor.save_tar(dir_name)
-        logger.info("Successfully saved model into '{}'".format(os.path.abspath(dir_name)))
-        return dir_name
+        return Metadata(metadata).persist()
 
 
 class Interpreter(object):
