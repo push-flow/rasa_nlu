@@ -12,14 +12,12 @@ from builtins import object
 import inspect
 
 from typing import Any
-from typing import ClassVar
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
 from typing import Text
 from typing import Tuple
-from typing import Type
 
 from rasa_nlu.config import RasaNLUConfig
 from rasa_nlu.training_data import Message
@@ -73,7 +71,7 @@ def find_unavailable_packages(package_names):
     return failed_imports
 
 
-def validate_requirements(component_names, dev_requirements_file="dev-requirements.txt"):
+def validate_requirements(component_names, dev_requirements_file="alt_requirements/requirements_dev.txt"):
     # type: (List[Text], Text) -> None
     """Ensures that all required python packages are installed to instantiate and used the passed components."""
     from rasa_nlu import registry
@@ -107,13 +105,14 @@ def validate_arguments(pipeline, context, allow_empty_pipeline=False):
         raise ValueError("Can not train an empty pipeline. " +
                          "Make sure to specify a proper pipeline in the configuration using the `pipeline` key." +
                          "The `backend` configuration key is NOT supported anymore.")
+
     provided_properties = set(context.keys())
 
     for component in pipeline:
         for r in component.requires:
             if r not in provided_properties:
                 raise Exception("Failed to validate at component '{}'. Missing property: '{}'".format(
-                        component.name, r))
+                    component.name, r))
         provided_properties.update(component.provides)
 
 
@@ -159,6 +158,19 @@ class Component(object):
     # Which attributes on a message are required by this component. e.g. if requires contains "tokens", than a
     # previous component in the pipeline needs to have "tokens" within the above described `provides` property.
     requires = []
+
+    def __init__(self):
+        self.partial_processing_pipeline = None
+        self.partial_processing_context = None
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        # these properties should not be pickled
+        if "partial_processing_context" in d:
+            del d["partial_processing_context"]
+        if "partial_processing_pipeline" in d:
+            del d["partial_processing_pipeline"]
+        return d
 
     @classmethod
     def required_packages(cls):
@@ -234,6 +246,27 @@ class Component(object):
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+    def prepare_partial_processing(self, pipeline, context):
+        """Sets the pipeline and context used for partial processing.
+
+        The pipeline should be a list of components that are previous to this one in the pipeline and
+        have already finished their training (and can therefore be safely used to process messages)."""
+
+        self.partial_processing_pipeline = pipeline
+        self.partial_processing_context = context
+
+    def partially_process(self, message):
+        """Allows the component to process messages during training (e.g. external training data).
+
+        The passed message will be processed by all components previous to this one in the pipeline."""
+
+        if self.partial_processing_context is not None:
+            for component in self.partial_processing_pipeline:
+                component.process(message, **self.partial_processing_context)
+        else:
+            logger.info("Failed to run partial processing due to missing pipeline.")
+        return message
+
 
 class ComponentBuilder(object):
     """Creates trainers and interpreters based on configurations. Caches components for reuse."""
@@ -279,7 +312,7 @@ class ComponentBuilder(object):
                 # If the component wasn't in the cache, let us add it if possible
                 self.__add_to_cache(component, cache_key)
             return component
-        except MissingArgumentError as e:   # pragma: no cover
+        except MissingArgumentError as e:  # pragma: no cover
             raise Exception("Failed to load component '{}'. {}".format(component_name, e))
 
     def create_component(self, component_name, config):
@@ -294,5 +327,5 @@ class ComponentBuilder(object):
                 component = registry.create_component_by_name(component_name, config)
                 self.__add_to_cache(component, cache_key)
             return component
-        except MissingArgumentError as e:   # pragma: no cover
+        except MissingArgumentError as e:  # pragma: no cover
             raise Exception("Failed to create component '{}'. {}".format(component_name, e))
