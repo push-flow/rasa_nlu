@@ -67,8 +67,6 @@ class RasaNLUConfig(object):
     DEFAULT_PROJECT_NAME = "default"
 
     def __init__(self, data=None, env_vars=None, cmdline_args=None):
-        if data is None and os.path.isdata(DEFAULT_CONFIG_LOCATION):
-            data = DEFAULT_CONFIG_LOCATION
         self.override(DEFAULT_CONFIG)
         if data is not None:
             self.override(json.loads(data))
