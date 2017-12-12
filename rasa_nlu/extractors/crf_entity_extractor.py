@@ -50,7 +50,8 @@ class CRFEntityExtractor(EntityExtractor):
         'pattern': lambda doc: str(doc[3]) if doc[3] is not None else 'N/A',
     }
 
-    def __init__(self, ent_tagger=None, entity_crf_features=None, entity_crf_BILOU_flag=True):
+    def __init__(self, ent_tagger=None, entity_crf_features=None,
+                 entity_crf_BILOU_flag=True):
         # type: (sklearn_crfsuite.CRF, List[List[Text]], bool) -> None
 
         self.ent_tagger = ent_tagger
@@ -61,8 +62,10 @@ class CRFEntityExtractor(EntityExtractor):
         self.BILOU_flag = entity_crf_BILOU_flag
 
         if not entity_crf_features:
-            # crf_features is [before, word, after] array with before, word, after holding keys about which
-            # features to use for each word, for example, 'title' in array before will have the feature
+            # crf_features is [before, word, after] array with before, word,
+            # after holding keys about which
+            # features to use for each word, for example, 'title' in
+            # array before will have the feature
             # "is the preceding word in title case?"
             self.crf_features = [
                 ['low', 'title', 'upper', 'pos', 'pos2'],
@@ -79,8 +82,16 @@ class CRFEntityExtractor(EntityExtractor):
     def train(self, training_data, config, **kwargs):
         # type: (TrainingData, RasaNLUConfig) -> None
 
-        self.BILOU_flag = config["entity_crf_BILOU_flag"]
-        self.crf_features = config["entity_crf_features"]
+        train_config = config.get("ner_crf", {})
+
+        # These two are expected to be in the config so not using .get
+        self.BILOU_flag = train_config["BILOU_flag"]
+        self.crf_features = train_config["features"]
+
+        self.max_iterations = train_config.get("max_iterations", 50)
+        self.L1_C = config.get("L1_c", 1)
+        self.L2_C = config.get("L2_c", 1e-3)
+
         if training_data.entity_examples:
             # convert the dataset into features
             dataset = self._create_dataset(training_data.entity_examples)
@@ -106,7 +117,8 @@ class CRFEntityExtractor(EntityExtractor):
         # type: (Message, **Any) -> None
 
         extracted = self.add_extractor_name(self.extract_entities(message))
-        message.set("entities", message.get("entities", []) + extracted, add_to_output=True)
+        message.set("entities", message.get("entities", []) + extracted,
+                    add_to_output=True)
 
     def _convert_example(self, example):
         # type: (Message) -> List[Tuple[int, int, Text]]
@@ -134,7 +146,8 @@ class CRFEntityExtractor(EntityExtractor):
         sentence_doc = message.get("spacy_doc")
         json_ents = []
         if len(sentence_doc) != len(entities):
-            raise Exception('Inconsistency in amount of tokens between crfsuite and spacy')
+            raise Exception('Inconsistency in amount of tokens '
+                            'between crfsuite and spacy')
         if self.BILOU_flag:
             # using the BILOU tagging scheme
             for word_idx in range(len(sentence_doc)):
@@ -145,20 +158,25 @@ class CRFEntityExtractor(EntityExtractor):
                            'value': word.text, 'entity': entity[2:]}
                     json_ents.append(ent)
                 elif entity.startswith('B-'):
-                    # start of a multi-word entity, need to represent whole extent
+                    # start of multi word-entity need to represent whole extent
                     ent_word_idx = word_idx + 1
                     finished = False
                     while not finished:
-                        if len(entities) > ent_word_idx and entities[ent_word_idx][2:] != entity[2:]:
+                        if len(entities) > ent_word_idx and \
+                                        entities[ent_word_idx][2:] != entity[2:]:
                             # words are not tagged the same entity class
                             logger.debug(
-                                    "Inconsistent BILOU tagging found, B- tag, L- tag pair encloses multiple " +
-                                    "entity classes.i.e. ['B-a','I-b','L-a'] instead of ['B-a','I-a','L-a'].\n" +
+                                    "Inconsistent BILOU tagging found, B- tag, "
+                                    "L- tag pair encloses multiple "
+                                    "entity classes.i.e. ['B-a','I-b','L-a'] "
+                                    "instead of ['B-a','I-a','L-a'].\n"
                                     "Assuming B- class is correct.")
-                        if len(entities) > ent_word_idx and entities[ent_word_idx].startswith('L-'):
+                        if len(entities) > ent_word_idx and \
+                                entities[ent_word_idx].startswith('L-'):
                             # end of the entity
                             finished = True
-                        elif len(entities) > ent_word_idx and entities[ent_word_idx].startswith('I-'):
+                        elif len(entities) > ent_word_idx and \
+                                entities[ent_word_idx].startswith('I-'):
                             # middle part of the entity
                             ent_word_idx += 1
                         else:
@@ -166,11 +184,16 @@ class CRFEntityExtractor(EntityExtractor):
                             finished = True
                             ent_word_idx -= 1
                             logger.debug(
-                                    "Inconsistent BILOU tagging found, B- tag not closed by L- tag, " +
-                                    "i.e ['B-a','I-a','O'] instead of ['B-a','L-a','O'].\nAssuming last tag is L-")
+                                    "Inconsistent BILOU tagging found, B- tag "
+                                    "not closed by L- tag, "
+                                    "i.e ['B-a','I-a','O'] instead of "
+                                    "['B-a','L-a','O'].\n"
+                                    "Assuming last tag is L-")
+                    end = sentence_doc[word_idx:ent_word_idx + 1].end_char
+                    ent_value = sentence_doc[word_idx:ent_word_idx + 1].text
                     ent = {'start': word.idx,
-                           'end': sentence_doc[word_idx:ent_word_idx + 1].end_char,
-                           'value': sentence_doc[word_idx:ent_word_idx + 1].text,
+                           'end': end,
+                           'value': ent_value,
                            'entity': entity[2:]}
                     json_ents.append(ent)
         elif not self.BILOU_flag:
@@ -187,8 +210,14 @@ class CRFEntityExtractor(EntityExtractor):
         return json_ents
 
     @classmethod
-    def load(cls, model_dir, model_metadata, cached_component, **kwargs):
-        # type: (Text, Metadata, Optional[CRFEntityExtractor], **Any) -> CRFEntityExtractor
+    def load(cls,
+             model_dir,     # type: Text
+             model_metadata,    # type: Metadata
+             cached_component,  # type: Optional[CRFEntityExtractor]
+             **kwargs   # type: **Any
+             ):
+        # type: (...) -> CRFEntityExtractor
+        from sklearn.externals import joblib
 
         if model_metadata.get("entity_extractor_crf"):
             meta = model_metadata.get("entity_extractor_crf")
@@ -201,7 +230,11 @@ class CRFEntityExtractor(EntityExtractor):
 
     def persist(self, model_dir):
         # type: (Text) -> Dict[Text, Any]
-        """Persist this model into the passed directory. Returns the metadata necessary to load the model again."""
+        """Persist this model into the passed directory.
+
+        Returns the metadata necessary to load the model again."""
+
+        from sklearn.externals import joblib
 
         if self.ent_tagger:            
             return {"entity_extractor_crf": {"model_file": self.ent_tagger,
@@ -213,7 +246,8 @@ class CRFEntityExtractor(EntityExtractor):
 
     def _sentence_to_features(self, sentence):
         # type: (List[Tuple[Text, Text, Text, Text]]) -> List[Dict[Text, Any]]
-        """Convert a word into discrete features in self.crf_features, including word before and word after."""
+        """Convert a word into discrete features in self.crf_features,
+        including word before and word after."""
 
         sentence_features = []
         for word_idx in range(len(sentence)):
@@ -233,8 +267,8 @@ class CRFEntityExtractor(EntityExtractor):
                     features = self.crf_features[i]
                     for feature in features:
                         # append each feature to a feature vector
-                        # word_features.append(prefix + feature + ':' + self.function_dict[feature](word))
-                        word_features[prefix + ":" + feature] = self.function_dict[feature](word)
+                        value = self.function_dict[feature](word)
+                        word_features[prefix + ":" + feature] = value
             sentence_features.append(word_features)
         return sentence_features
 
@@ -291,9 +325,9 @@ class CRFEntityExtractor(EntityExtractor):
         y_train = [self._sentence_to_labels(sent) for sent in df_train]
         self.ent_tagger = sklearn_crfsuite.CRF(
                 algorithm='lbfgs',
-                c1=1.0,  # coefficient for L1 penalty
-                c2=1e-3,  # coefficient for L2 penalty
-                max_iterations=50,  # stop earlier
+                c1=self.L1_C,  # coefficient for L1 penalty
+                c2=self.L2_C,  # coefficient for L2 penalty
+                max_iterations=self.max_iterations,  # stop earlier
                 all_possible_transitions=True  # include transitions that are possible, but not observed
         )
         self.ent_tagger.fit(X_train, y_train)

@@ -4,19 +4,19 @@ from __future__ import division
 from __future__ import absolute_import
 from builtins import object
 import io
-import json
+import simplejson
 import os
 import six
+import json
 
-
-# Describes where to search for the configuration file if the location is not set by the user
+# Describes where to search for the config file if no location is specified
 from typing import Text
 
 DEFAULT_CONFIG_LOCATION = "config.json"
 
-
 DEFAULT_CONFIG = {
-    "name": None,
+    "project": None,
+    "fixed_model_name": None,
     "config": DEFAULT_CONFIG_LOCATION,
     "data": None,
     "emulate": None,
@@ -26,19 +26,32 @@ DEFAULT_CONFIG = {
     "mitie_file": os.path.join("data", "total_word_feature_extractor.dat"),
     "spacy_model_name": None,
     "num_threads": 1,
-    "path": "models",
+    "max_training_processes": 1,
+    "path": "projects",
     "port": 5000,
-    "server_model_dirs": None,
     "token": None,
+    "cors_origins": [],
     "max_number_of_ngrams": 7,
     "pipeline": [],
     "response_log": "logs",
+    "storage": None,
+    "aws_endpoint_url": None,
     "duckling_dimensions": None,
-    "entity_crf_BILOU_flag": True,
-    "entity_crf_features": [
-        ["low", "title", "upper", "pos", "pos2"],
-        ["bias", "low", "word3", "word2", "upper", "title", "digit", "pos", "pos2", "pattern"],
-        ["low", "title", "upper", "pos", "pos2"]]
+    "duckling_http_url": None,
+    "ner_crf": {
+        "BILOU_flag": True,
+        "features": [
+            ["low", "title", "upper", "pos", "pos2"],
+            ["bias", "low", "word3", "word2", "upper", "title", "digit", "pos", "pos2", "pattern"],
+            ["low", "title", "upper", "pos", "pos2"]],
+        "max_iterations": 50,
+        "L1_c": 1,
+        "L2_c": 1e-3
+    },
+    "intent_classifier_sklearn": {
+        "C": [1, 2, 5, 10, 20, 100],
+        "kernel": "linear"
+    }
 }
 
 
@@ -51,6 +64,7 @@ class InvalidConfigError(ValueError):
 
 
 class RasaNLUConfig(object):
+    DEFAULT_PROJECT_NAME = "default"
 
     def __init__(self, data=None, env_vars=None, cmdline_args=None):
         if data is None and os.path.isdata(DEFAULT_CONFIG_LOCATION):
@@ -74,14 +88,17 @@ class RasaNLUConfig(object):
             else:
                 raise InvalidConfigError("No pipeline specified and unknown pipeline template " +
                                          "'{}' passed. Known pipeline templates: {}".format(
-                                             self.__dict__['pipeline'],
-                                             ", ".join(registry.registered_pipeline_templates.keys())))
+                                                 self.__dict__['pipeline'],
+                                                 ", ".join(registry.registered_pipeline_templates.keys())))
 
         for key, value in self.items():
             setattr(self, key, value)
 
     def __getitem__(self, key):
         return self.__dict__[key]
+
+    def get(self, key, default=None):
+        return self.__dict__.get(key, default)
 
     def __setitem__(self, key, value):
         self.__dict__[key] = value
@@ -95,6 +112,12 @@ class RasaNLUConfig(object):
     def __len__(self):
         return len(self.__dict__)
 
+    def __getstate__(self):
+        return self.as_dict()
+
+    def __setstate__(self, state):
+        self.override(state)
+
     def items(self):
         return list(self.__dict__.items())
 
@@ -102,7 +125,7 @@ class RasaNLUConfig(object):
         return dict(list(self.items()))
 
     def view(self):
-        return json.dumps(self.__dict__, indent=4)
+        return simplejson.dumps(self.__dict__, indent=4)
 
     def split_arg(self, config, arg_name):
         if arg_name in config and isinstance(config[arg_name], six.string_types):
@@ -117,13 +140,15 @@ class RasaNLUConfig(object):
         return config
 
     def create_cmdline_config(self, cmdline_args):
-        cmdline_config = {k: v for k, v in list(cmdline_args.items()) if v is not None}
+        cmdline_config = {k: v
+                          for k, v in list(cmdline_args.items())
+                          if v is not None}
         cmdline_config = self.split_pipeline(cmdline_config)
         cmdline_config = self.split_arg(cmdline_config, "duckling_dimensions")
         return cmdline_config
 
     def create_env_config(self, env_vars):
-        keys = [key for key in env_vars.keys() if "RASA" in key]
+        keys = [key for key in env_vars.keys() if "RASA_" in key]
         env_config = {key.split('RASA_')[1].lower(): env_vars[key] for key in keys}
         env_config = self.split_pipeline(env_config)
         env_config = self.split_arg(env_config, "duckling_dimensions")
