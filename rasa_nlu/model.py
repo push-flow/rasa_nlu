@@ -108,13 +108,17 @@ class Trainer(object):
     # Officially supported languages (others might be used, but might fail)
     SUPPORTED_LANGUAGES = ["de", "en"]
 
-    def __init__(self, config, component_builder=None, skip_validation=False):
+    def __init__(self, config, spacy_instance=None, component_builder=None, skip_validation=False):
         # type: (RasaNLUConfig, Optional[ComponentBuilder], bool) -> None
 
         self.config = config
         self.skip_validation = skip_validation
         self.training_data = None  # type: Optional[TrainingData]
         self.pipeline = []  # type: List[Component]
+
+        if spacy_instance:
+            config['spacy_instance'] = spacy_instance
+
         if component_builder is None:
             # If no builder is passed, every interpreter creation will result in
             # a new builder. hence, no components are reused.
@@ -194,9 +198,12 @@ class Interpreter(object):
         return {"intent": {"name": "", "confidence": 0.0}, "entities": []}
 
     @staticmethod
-    def load(model_dir, config=RasaNLUConfig(), component_builder=None,
+    def load(model_dir, config=RasaNLUConfig(), spacy_instance=None, component_builder=None,
              skip_valdation=False):
         """Creates an interpreter based on a persisted model."""
+
+        if spacy_instance:
+            config['spacy_instance'] = spacy_instance
 
         if isinstance(model_dir, Metadata):
             # this is for backwards compatibilities (metadata passed as a dict)

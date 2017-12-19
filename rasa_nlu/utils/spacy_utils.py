@@ -44,12 +44,15 @@ class SpacyNLP(Component):
     @classmethod
     def create(cls, config):
         # type: (RasaNLUConfig) -> SpacyNLP
-        import spacy
         spacy_model_name = config["spacy_model_name"]
         if spacy_model_name is None:
             spacy_model_name = config["language"]
         logger.info("Trying to load spacy model with name '{}'".format(spacy_model_name))
-        nlp = spacy.load(spacy_model_name, parser=False)
+        if not config['spacy_instance']:
+            import spacy
+            nlp = spacy.load(spacy_model_name, parser=False)
+        else:
+            nlp = config['spacy_instance']
         cls.ensure_proper_language_model(nlp)
         return SpacyNLP(nlp, config["language"], spacy_model_name)
 
@@ -90,12 +93,16 @@ class SpacyNLP(Component):
     @classmethod
     def load(cls, model_dir=None, model_metadata=None, cached_component=None, **kwargs):
         # type: (Text, Metadata, Optional[SpacyNLP], **Any) -> SpacyNLP
-        import spacy
 
         if cached_component:
             return cached_component
 
-        nlp = spacy.load(model_metadata.get("spacy_model_name"), parser=False)
+        if not kwargs.get('config').get('spacy_instance'):
+            import spacy
+            nlp = spacy.load(model_metadata.get("spacy_model_name"), parser=False)
+        else:
+            nlp = kwargs.get('config').get('spacy_instance')
+
         cls.ensure_proper_language_model(nlp)
         return SpacyNLP(nlp, model_metadata.get("language"), model_metadata.get("spacy_model_name"))
 
