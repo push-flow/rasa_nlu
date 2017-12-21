@@ -221,11 +221,14 @@ class Interpreter(object):
     @staticmethod
     def create(model_metadata,  # type: Metadata
                config,  # type: RasaNLUConfig
+               spacy_instance=None, # type: spacy.lang.xx.Xxxxxx
                component_builder=None,  # type: Optional[ComponentBuilder]
                skip_valdation=False  # type: bool
                ):
         # type: (...) -> Interpreter
         """Load stored model and components defined by the provided metadata."""
+        if spacy_instance:
+            config['spacy_instance'] = spacy_instance
 
         context = {}
 
